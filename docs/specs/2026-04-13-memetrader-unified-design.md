@@ -2,7 +2,7 @@
 
 > **Status**: Design Document (Brainstorming Phase)
 > **Date**: 2026-04-13
-> **Version**: 2.0 (Comprehensive)
+> **Version**: 3.0 (Complete - All Decisions Made)
 
 ---
 
@@ -10,7 +10,7 @@
 
 This document outlines the comprehensive design for unifying Hermes Agent with NOFX trading backend into a single AI-powered trading platform. The system will use Hermes as the single AI brain for all trading decisions, with NOFX serving as the execution layer.
 
-### Key Decisions Made (v2.0)
+### Key Decisions Made (v3.0)
 
 | Decision | Description | Status |
 |----------|-------------|--------|
@@ -26,6 +26,10 @@ This document outlines the comprehensive design for unifying Hermes Agent with N
 | **Core Agent** | Hermes as core agent with multi-agent system | ✅ |
 | **Multi-Agent** | cronjob + delegate + background processes | ✅ |
 | **Learning** | Hermes memory + skills auto-improvement | ✅ |
+| **Social Signals** | Twitter + Telegram + Discord agents | ✅ |
+| **Twitter API** | Twikit (FREE - no API key!) | ✅ |
+| **Signal Output** | Dual: OWN trading group + PUBLIC signal channel | ✅ |
+| **Autonomous** | A2: Autonomous with limits | ✅ |
 
 ---
 
@@ -1157,6 +1161,529 @@ SUCCESS CRITERIA:
 
 ---
 
-*Document Version: 2.0*
-*Status: Design Complete - Ready for Implementation Planning*
-*(All brainstorming decisions documented)*
+## Part 23: Social Signal Agent System (Complete)
+
+### Overview
+
+The Social Signal Agent System enables the AI to:
+1. **Monitor** social platforms (Twitter, Telegram, Discord)
+2. **Detect** signals (mentions, news, sentiment)
+3. **Route** signals to Hermes Core for decision
+4. **Output** to dual channels (OWN group + PUBLIC channel)
+
+### Social Signal Architecture
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                    SOCIAL SIGNAL AGENT SYSTEM                                              │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                          │
+│  ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐           │
+│  │                           ORCHESTRATOR (Hermes Core - Port 8643)                                      │           │
+│  │  ┌──────────────────────────────────────────────────────────────────────────────────────────────┐           │           │
+│  │  │  • Receives ALL signals from social agents                                 │           │           │
+│  │  │  • Makes trading decisions (buy/sell/hold)                               │           │           │
+│  │  │  • Routes to appropriate executor (perp→NOFX, DEX→Hermes)               │           │           │
+│  │  │  • Executes trades and monitors positions                                │           │           │
+│  │  │  • Learning: saves analysis to memory after each trade                  │           │           │
+│  │  └──────────────────────────────────────────────────────────────────────────────────────────────┘           │
+│  └───────────────────────────────────────────────────────────────────────────────────────────────────────┘           │
+│                                              ▲                                                             │
+│                                              │ Signals & Alerts                                              │
+│                                              │                                                             │
+│  ┌───────────────────────────────────────────────────────────────────────────────────────────────────────┐           │
+│  │                                    SOCIAL AGENTS (3 Parallel)                                      │           │
+│  │                                                                                              │           │
+│  │  ┌──────────────────────────────────────┐ ┌──────────────────────────────────────┐ ┌──────────────────┐  │           │
+│  │  │         TWITTER AGENT              │ │       TELEGRAM AGENT               │ │  DISCORD AGENT  │  │           │
+│  │  ├───────────────────────────────┤ ├───────────────────────────────┤ ├────────────────┤  │           │
+│  │  │ Tool: twitter_follow_tool │ │ Tool: telegram_join_tool  │ │Tool: discord_join│  │           │
+│  │  │ Library: twikit (FREE) │ │ Library: python-telegram-bot│ │Library: discord.py│  │           │
+│  │  ├───────────────────────────────┤ ├───────────────────────────────┤ ├────────────────┤  │           │
+│  │  │                          │ │                          │ │               │  │           │
+│  │  │ • Track coin accounts   │ │ • Join coin channels   │ │• Join servers  │  │           │
+│  │  │   e.g., @PumpFun   │ │   e.g., @wif_sol   │ │• Monitor chats│  │           │
+│  │  │   e.g., @elonmusk │ │   e.g., Bonk      │ │• Detect tokens│  │           │
+│  │  │                          │ │                          │ │               │  │           │
+│  │  │ • Monitor KOL accounts│ │ • Monitor channels    │ │• Signal       │  │           │
+│  │  │   e.g., @cryptorec│ │ • Detect news      │ │               │  │           │
+│  │  │   e.g., @santi   │ │ • Alert main     │ │• Alert main   │  │           │
+│  │  │                          │ │                          │ │               │  │           │
+│  │  │ • Detect $CASHTAG   │ │ • Forward to orch  │ │• Forward to orch│  │           │
+│  │  │   e.g., $BONK   │ │                          │ │               │  │           │
+│  │  │   e.g., $WIF   │ │                          │ │               │  │           │
+│  │  │                          │ │                          │ │               │  │           │
+│  │  │ • Sentiment analysis │ │                          │ │               │  │           │
+│  │  │   Score: -1 to +1 │ │                          │ │               │  │           │
+│  │  │                          │ │                          │ │               │  │           │
+│  │  │ • KOL tracking   │ │                          │ │               │  │           │
+│  │  │   Whale movements│ │                          │ │               │  │           │
+│  │  │                          │ │                          │ │               │  │           │
+│  │  │ • FREE (twikit) │ │ • Bot with API key│ │• Bot with API│  │           │
+│  │  │   No API key!    │ │                          │ │               │  │           │
+│  │  └──────────────────────────────────────┘ └──────────────────────────────────────┘ └────────────────┘  │           │
+│  │                   │                           │                           │                                 │           │
+│  └───────────────────┼───────────────────┼───────────────────┼─────────────────────────────────┘           │
+│                      │                           │                           │                                             │
+└──────────────────────┼───────────────────┼───────────────────┼─────────────────────────────────────────────┘
+                       │                           │                           │
+                       │                           │          ┌────────────────┴────────────────┐
+                       │                           │          │    OUTPUT CHANNELS     │
+                       │                           │          ├─────────────────────┤
+                       ▼                           ▼          │
+┌─────────────────────────────────────────┐ ┌─────────────┐ │   OWN TRADING GROUP    │
+│          SIGNAL ROUTING                 │ │ PUBLIC SIGNAL CH   │
+│  ┌───────────────────────┐   │ │          │ │ (Telegram)          │
+│  │  Signal Priority  │   │ │          │ ├─────────────────────┤
+│  │  • High: KOL    │   │ │          │ │• Execute trades    │
+│  │    mentions     │   │ │          │ │• Position updates │
+│  │  • Medium:     │   │ │          │ │• Confidential    │
+│  │    volume spike│   │ │          │ │• Full control   │
+│  │  • Low:      │   ��� │          │ ├─────────────────────┤
+│  │    mentions   │   │ │          │ │PUBLIC SIGNAL CH   │
+│  │             │   │ │          │ │(Telegram)          │
+│  │  Route to:     │   │ │          │ ├─────────────────────┤
+│  │  • Hermes    │   │ │          │ │• Share signals   │
+│  │    Orchestr  │   │ │          │ │• Educational    │
+│  │             │   │ │          │ │• Community     │
+│  │  • Telegram │   │ │          │ │• Build audience│
+│  │    group    │   │ │          │ │• Revenue pot.  │
+│  └───────────────┘   │ │          │ └─────────────────────┘
+└──────────────────────┼─────────────┼────┘
+                     │          │
+                     ▼          ▼
+           ┌──────────────┐ ┌──────────────┐
+           │ Hermes Core  │ │ Telegram   │
+           │ Orchestr.  │ │ Bot       │
+           └──────────────┘ └──────────────┘
+```
+
+### Social Agent Specifications
+
+#### Twitter Agent (via Twikit - FREE!)
+
+| Feature | Details |
+|---------|---------|
+| **Library** | twikit (4.2k stars on GitHub) |
+| **Cost** | FREE - no API key needed! |
+| **Features** | Search, post, user tweets, DMs |
+| **Setup** | Login with username/password |
+
+**Twitter Agent Tasks:**
+
+```python
+# Track specific coin/cashtag
+async def track_cashtag(cashtag: str):
+    # Search tweets with $CASHTAG
+    tweets = await client.search(cashtag)
+    # Filter by engagement
+    # Score sentiment
+    # Alert if high activity
+
+# Monitor KOL (Key Opinion Leader)
+async def monitor_kol(username: str):
+    # Get user tweets
+    # Detect buy/sell signals
+    # Alert on position changes
+```
+
+#### Telegram Agent
+
+| Feature | Details |
+|---------|---------|
+| **Library** | python-telegram-bot |
+| **Cost** | Bot token only (free) |
+| **Features** | Join channels, read messages, send |
+
+**Telegram Agent Tasks:**
+
+```python
+# Join coin channel
+async def join_channel(channel_username: str):
+    # Request to join
+    # Wait for approval
+    # Begin monitoring
+
+# Monitor for signals
+async def monitor_channel():
+    # Read new messages
+    # Detect coin mentions
+    # Forward to orchestrator
+```
+
+#### Discord Agent
+
+| Feature | Details |
+|---------|---------|
+| **Library** | discord.py |
+| **Cost** | Bot token (free) |
+| **Features** | Join servers, read messages |
+
+### Signal Output Channels (Dual)
+
+#### OWN Trading Group (Private Telegram)
+
+| Feature | Details |
+|---------|---------|
+| **Purpose** | Execute trades, position updates |
+| **Access** | Private - only you |
+| **Features** | Full trade control |
+
+**Messages:**
+- Buy signal executed
+- Sell signal executed
+- Position opened/closed
+- Stop loss triggered
+- Take profit triggered
+- Daily P&L summary
+
+#### PUBLIC Signal Channel (Telegram)
+
+| Feature | Details |
+|---------|---------|
+| **Purpose** | Share signals, build community |
+| **Access** | Public - invite link |
+| **Features** | Revenue potential |
+
+**Messages:**
+- Coin name + entry price
+- Target price
+- Confidence score
+- Brief rationale
+- Educational content
+
+### Signal Flow Diagram
+
+```
+NEW COIN DETECTED (from any social)
+         │
+         ▼
+┌────────────────────────────────┐
+│  SOCIAL AGENT RECEIVES            │
+│  1. Twitter: $BONK mentioned  │
+│  2. Telegram: "BUY BONK"    │
+│  3. Discord: trending       │
+└────────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────────┐
+│  SIGNAL VALIDATION              │
+│  • Check sentiment score      │
+│  • Check volume spike     │
+│  • Check KOL mention     │
+│  • Pass/Fail threshold  │
+└────────────────────────────────┘
+         │
+         ▼ (Pass)
+┌────────────────────────────────┐
+│  ROUTE TO ORCHESTRATOR      │
+│  Hermes receives signal    │
+│  with:                    │
+│  • coin_name          │
+│  • signal_type        │
+│  • source           │
+│  • confidence       │
+└────────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────────┐
+│  HERMES CORE DECISION         │
+│  LLM analyzes:              │
+│  • Price data           │
+│  • Liquidity          │
+│  • Risk assessment    │
+│  • Make decision:         │
+│    BUY / SELL / HOLD   │
+└────────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────────┐
+│  EXECUTE + ALERT              │
+│                             │
+│  IF BUY:                    │
+│  • Execute DEX swap       │
+│  • Alert OWN group      │
+│  • Log to memory     │
+│                             │
+│  IF SIGNAL ONLY:              │
+│  • Alert PUBLIC channel  │
+│  • Wait for approval    │
+└────────────────────────────────┘
+```
+
+### Configuration
+
+```yaml
+# Social Signal Configuration
+social:
+  twitter:
+    enabled: true
+    library: twikit  # FREE!
+    track_coins:
+      - $BONK
+      - $WIF
+      - $MEW
+      - $POPCAT
+    track_kols:
+      - cryptorec
+      - santi
+      - elonmusk
+  
+  telegram:
+    enabled: true
+    bot_token: ${TELEGRAM_BOT_TOKEN}
+    join_channels:
+      - bonk_sol
+      - wif_sol
+  
+  discord:
+    enabled: true
+    bot_token: ${DISCORD_BOT_TOKEN}
+    join_servers:
+      - memecoin_trading
+
+# Signal Output
+signals:
+  own_group_id: ${OWN_TELEGRAM_GROUP_ID}
+  public_channel_id: ${PUBLIC_CHANNEL_ID}
+  
+  # Autonomous settings
+  max_position_size: 0.1 SOL
+  max_daily_trades: 5
+  require_approval_over: 1.0 SOL
+```
+
+### Implementation Priority
+
+| Priority | Agent | Status |
+|----------|-------|--------|
+| 1 | Telegram (already integrated) | Use existing |
+| 2 | Twitter via Twikit | NEW tool - FREE |
+| 3 | Telegram channel joiner | NEW tool |
+| 4 | Discord joiner | NEW tool |
+| 5 | Signal routing | NEW |
+| 6 | Dual output | Configure |
+
+---
+
+## Part 24: Complete System Architecture (v3.0 - Final)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                    MEMETRADER COMPLETE SYSTEM (v3.0)                                           │
+├─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                               │
+│  ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐               │
+│  │                              HERMES CORE AGENT (Port 8643)                                    │               │
+│  │  ┌───────────────────────────────────────────────────────────────────────────────────────────────┐               │               │
+│  │  │                                    AI BRAIN                                            │               │               │
+│  │  │  • Single LLM for ALL trading decisions                                    │               │               │
+│  │  │  • Memory: learns from EVERY trade (persistent)                   │               │               │
+│  │  │  • Skills: auto-improving strategies                         │               │               │
+│  │  │  • Context: 60k+ tokens, efficient compression           │               │               │
+│  │  └───────────────────────────────────────────────────────────────────────────────────────────────┘               │               │
+│  │                                                │                                                 │               │
+│  │  ┌───────────────────────────────────────────────────────────────────────────────────────────────┐               │               │
+│  │  │                              MULTI-AGENT SYSTEM                                         │               │               │
+│  │  │  ┌──────────────────────┐  ┌──────────────────────┐  ┌──────────────────────┐  │               │               │
+│  │  │  │      CRONJOB         │  │      DELEGATE         │  │    BACKGROUND       │  │               │               │
+│  │  │  │  Agent              │  │  Agent              │  │  Agent              │  │               │               │
+│  │  │  ├──────────────────────┤  ├──────────────────────┤  ├──────────────────────┤  │               │               │
+│  │  │  │ • Scan every 5 min   │  │ • Analyze 10 coins │  │ • Execute swap   │  │               │               │
+│  │  │  │ • Check positions   │  │   parallel         │  │ • Monitor confirm│  │               │               │
+│  │  │  │ • Daily report  │  │ • Aggregate     │  │ • Update on     │  │               │               │
+│  │  │  │ • Position check│  │   results       │  │   complete     │  │               │               │
+│  │  │  └──────────────────────┘  └──────────────────────┘  └──────────────────────┘  │               │               │
+│  │  └───────────────────────────────────────────────────────────────────────────────────────────────┘               │               │
+│  │                                                │                                                 │               │
+│  │  ┌───────────────────────────────────────────────────────────────────────────────────────────────┐               │               │
+│  │  │                                    60+ TOOLS                                             │               │               │
+│  │  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌────────────┐ │               │               │
+│  │  │  │ nofx_trade │ │ dex_swap   │ │ coingecko  │ │ twikit    │ │  memory   │ │ delegate │ │               │               │
+│  │  │  │  (perp)   │ │  (NEW)   │ │  price   │ │ (FREE!)  │ │  learn   │ │ (parallel)│ │               │               │
+│  │  │  │    ↓     │ │    ↓     │ │    ↓     │ │    ↓     │ │    ↓     │ │   ↓      │ │               │               │
+│  │  │  │  NOFX    │ │ Jupiter  │ │ CoinGecko│ │ Twitter │ │ Memory DB│ │ Subagents│ │               │               │
+│  │  │  │  perps   │ │  DEX    │ │ prices  │ │ scrapes │ │ learnings│ │ workers │ │               │               │
+│  │  │  └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘ └────────────┘ │               │               │
+│  │  └───────────────────────────────────────────────────────────────────────────────────────────────┘               │               │
+│  └───────────────────────────────────────────────────────────────────────────────────────────────────────┘               │
+│                                              │                                                                       │
+│                                              │ AUTO-ROUTING (R3)                                                    │
+│                                              ▼                                                                       │
+│  ┌───────────────────────────────────────────────────────────────────────┐ ┌───────────────────────────────────────────────┐                       │
+│  │              NOFX TRADING BACKEND                    │ │       DEX WALLETS (Hermes)           │                       │
+│  │  ┌───────────────────────────────────────────┐ │ │  ┌──────────────────────────────┐  │                       │
+│  │  │  Perps/Futures:                       │ │ │  │ 2-WALLET PATTERN       │  │                       │
+│  │  │  • OKX, Bybit, Gate, Hyperliquid │ │ │  │                      │  │                       │
+│  │  │  • Lighter, Aster, KuCoin     │ │ │  │ Agent Wallet (signing) │  │                       │
+│  │  │  • Grid Trading Engine     │ │ │  │ • Balance: ~0 SOL    │  │                       │
+│  │  │  • Position Management│ │ │  │ • For signing TX   │  │                       │
+│  │  │  • Risk Controls │ │ │  │                      │  │                       │
+│  │  │  • NOFX testnet │ │ │  Main Wallet (funds)│  │                       │
+│  │  │                │ │ │  • Holds funds     │  │                       │
+│  │  │  DEX SPOT (via Hermes):    │ │ │  • Never expose  │  │                       │
+│  │  │  • Jupiter (aggregator)│ │ │  • For funding    │  │                       │
+│  │  │  • Raydium         │ │ │  └──────────────────────────────┘  │                       │
+│  │  │  • Cetus (SUI)      │ │ └───────────────────────────────────────────────┘                       │
+│  │  │                │ │                                                                     │
+│  │  │  DEX Integration:        │ │  Solana mainnet: Jupiter/Raydium                 │
+│  │  │  • Devnet first    │ │  SUI testnet: Cetus                           │
+│  │  │  • Test 10 trades│ │  All via Hermes dex_swap tool              │
+│  │  │  • Then mainnet │ │                                                                     │
+│  │  └───────────────────────────────────────────┘ │                                                                     │
+│  └───────────────────────────────────────────────────────────────────────┘                                │
+│                                              │                                                                     │
+│  ┌───────────────────────────────────────────────────────────────────────┐                                              │
+│  │              DATA SOURCES (All Free/Low Cost)          │                                              │
+│  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐┌──────────────┐ ┌──────────────┐ ┌────────────┐│           │
+│  │  │  CoinGecko │ │ DexScreener│ │  Birdeye  ││  Helius   │ │  NofxOS   │ │  Twikit  ││           │
+│  │  │  Prices   │ │  Token    │ │  Solana  ││  RPC     │ │   OI      │ │  FREE!   ││           │
+│  │  │ +Market   │ │ Analytics│ │   Data   ││ +Webhooks│ │ +AI500   │ │ Twitter  ││           │
+│  │  │  Free    │ │  Free    │ │  Free    ││  Free tier│ │  Free    │ │ No API   ││           │
+│  │  │ (30/min) │ │ (10k/mo) │ │  (free)  ││         │ │         │ │  key!   ││           │
+│  │  └──────────────┘ └──────────────┘ └──────���───────┘└──────────────┘ └──────────────┘ └────────────┘│           │
+│  └───────────────────────────────────────────────────────────────────────┘                                              │
+│                                                                                                               │
+│  ┌───────────────────────────────────────────────────────────────────────┐                                              │
+│  │              SOCIAL SIGNAL AGENTS (3 Parallel)                        │                                              │
+│  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐                    │                                              │
+│  │  │  Twitter  │ │ Telegram  │ │  Discord  │                    │                                              │
+│  │  │  Agent   │ │  Agent    │ │  Agent    │                    │                                              │
+│  │  ├──────────────┤ ├──────────────┤ ├──────────────┤                    │                                              │
+│  │  │ • Track   │ │ • Join    │ │ • Join     │                    │                                              │
+│  │  │   $COIN  │ │  channels│ │  servers  │                    │                                              │
+│  │  │ • Monitor│ │ • Monitor│ │ • Monitor│                    │                                              │
+│  │  │   KOLs  │ │  chats  │ │  chats   │                    │                                              │
+│  │  │ • Detect│ │ • Detect│ │ • Detect │                    │                                              │
+│  │  │   $TAG  │ │  mentions│ │  mentions│                    │                                              │
+│  │  │ • Sentiment│ │ • Signal│ │ • Signal │                    │                                              │
+│  │  │   (twikit│ │ • Forward│ │ • Forward │                    │                                              │
+│  │  │   FREE!)│ │   to orch│ │   to orch│                    │                                              │
+│  │  └──────────────┘ └──────────────┘ └──────────────┘                    │                                              │
+│  └───────────────────────────────────────────────────────────────────────┘                                              │
+│                                                                                                               │
+│  ┌───────────────────────────────────────────────────────────────────────┐                                              │
+│  │              OUTPUT CHANNELS (Dual)                        │                                              │
+│  │  ┌──────────────────────────────────────┐ ┌──────────────────────────────────────┐  │           │
+│  │  │         OWN TRADING GROUP              │ │      PUBLIC SIGNAL CHANNEL           │  │           │
+│  │  │      (Private Telegram)             │ │        (Telegram)              │  │           │
+│  │  ├──────────────────────────────┬─────┤ ├──────────────────────────────┬───────┤  │           │
+│  │  │  • Execute trades           │ Signal│ │  • Share signals             │Signal │  │           │
+│  │  │  • Position updates      │→Orch │ │  • Educational content    │→Public│  │           │
+│  │  │  • Stop loss alerts      │      │ │  • Build community         │      │  │           │
+│  │  │  • Take profit alerts    │      │ │  • Revenue potential       │      │  │           │
+│  │  │  • Full control        │      │ │                          │      │  │           │
+│  │  └──────────────────────────────┴─────┘ └──────────────────────────────┴───────┘  │           │
+│  └───────────────────────────────────────────────────────────────────────┘                                              │
+│                                                                                                               │
+│  ┌───────────────────────────────────────────────────────────────────────┐                                              │
+│  │              LEARNING SYSTEM                        │                                              │
+│  │  ┌───────────────────────────────────────────────────────────────┐    │                                              │
+│  │  │  After EVERY trade:                                          │    │                                              │
+│  │  │  1. Save trade to Hermes memory                         │    │                                              │
+│  │  │  2. Analyze: What worked, what didn't             │    │                                              │
+│  │  │  3. Update strategy skill if successful          │    │                                              │
+│  │  │  4. Log to trade journal                      │    │                                              │
+│  │  │  5. Self-evolve: adapt strategy based on results    │    │                                              │
+│  │  └───────────────────────────────────────────────────────────────┘    │                                              │
+│  └───────────────────────────────────────────────────────────────────────┘                                              │
+│                                                                                                               │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Complete Trading Flow
+
+```
+USER INPUT: "What's the sentiment on BONK?"
+         │
+         ▼
+┌─────────────────────────────────────┐
+│     HERMES CORE AGENT                 │
+│  1. Receive user message            │
+│  2. Check memory context          │
+│  3. Determine tools needed      │
+└─────────────────────────────────────┘
+         │
+         ▼ (needs social data)
+┌─────────────────────────────────────┐
+│   SOCIAL SIGNAL AGENTS              │
+│  • Twitter: check $BONK           │
+│  • Get recent tweets             │
+│  • Calculate sentiment score     │
+│  • Return to orchestrator       │
+└─────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────┐
+│   HERMES LLM DECISION              │
+│  • Analyze sentiment            │
+│  • Check price/liquidity    │
+│  • Generate response         │
+└─────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────┐
+│   RESPONSE TO USER                 │
+│  "Bullish sentiment (0.75)..."
+└─────────────────────────────────────┘
+
+
+USER: "BUY 0.1 SOL BONK"
+         │
+         ▼
+┌─────────────────────────────────────┐
+│     HERMES CORE AGENT                 │
+│  1. Parse: BUY action             │
+│  2. Route: DEX spot (not perp)   │
+│  3. Check wallet balance       │
+└─────────────────────────────────────┘
+         │
+         ▼ (DEX Spot)
+┌─────────────────────────────────────┐
+│     DEX_SWAP TOOL                  │
+│  1. Get quote (Jupiter API)  │
+│  2. Calculate output         │
+│  3. Check slippage         │
+│  4. Sign with agent wallet  │
+│  5. Submit transaction    │
+│  6. Monitor confirm     │
+└─────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────┐
+│   EXECUTE + LOG                    │
+│  • Execute swap on DEX          │
+│  • Alert OWN group           │
+│  • Save to memory          │
+│  • Update trade journal  │
+└─────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────┐
+│   LEARNING (After trade)            │
+│  • Analyze outcome          │
+│  • Save lesson to memory │
+│  • Update strategy      │
+└─────────────────────────────────────┘
+```
+
+### Cost Summary (Monthly)
+
+| Component | Cost | Status |
+|-----------|------|--------|
+| Hermes (self-hosted) | FREE | ✅ |
+| NOFX (self-hosted) | FREE | ✅ |
+| CoinGecko | FREE (30/min) | ✅ |
+| DexScreener | FREE (10k/mo) | ✅ |
+| Birdeye | FREE | ✅ |
+| Helius | FREE tier | ✅ |
+| Twitter (twikit) | FREE! | ✅ |
+| Telegram Bot | FREE | ✅ |
+| Discord Bot | FREE | ✅ |
+| **Total** | **$0** | ✅ |
+
+---
+
+*Document Version: 3.0*
+*Status: Design Complete - All Brainstorming Decisions Documented*
+*Ready for Implementation Planning*
