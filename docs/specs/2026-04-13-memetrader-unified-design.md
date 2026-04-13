@@ -1,8 +1,8 @@
 # MemeTrader Unified System - Detailed Design
 
-> **Status**: Design Document (Brainstorming Phase)
+> **Status**: Design Document (Brainstorming Complete)
 > **Date**: 2026-04-13
-> **Version**: 3.0 (Complete - All Decisions Made)
+> **Version**: 4.0 (Final - All Decisions Made)
 
 ---
 
@@ -10,7 +10,7 @@
 
 This document outlines the comprehensive design for unifying Hermes Agent with NOFX trading backend into a single AI-powered trading platform. The system will use Hermes as the single AI brain for all trading decisions, with NOFX serving as the execution layer.
 
-### Key Decisions Made (v3.0)
+### Key Decisions Made (v4.0 - Final)
 
 | Decision | Description | Status |
 |----------|-------------|--------|
@@ -23,12 +23,14 @@ This document outlines the comprehensive design for unifying Hermes Agent with N
 | **Routing (R3)** | Auto-route based on trade type (perp→NOFX, DEX→Hermes) | ✅ |
 | **Strategy (S2)** | Hybrid - NOFX grid + Hermes for DEX/sentiment | ✅ |
 | **Wallet (Hermes)** | DEX wallet in Hermes (2-wallet pattern) | ✅ |
+| **Wallet Security** | 2-wallet + safety limits (W1) | ✅ |
 | **Core Agent** | Hermes as core agent with multi-agent system | ✅ |
 | **Multi-Agent** | cronjob + delegate + background processes | ✅ |
-| **Learning** | Hermes memory + skills auto-improvement | ✅ |
-| **Social Signals** | Twitter + Telegram + Discord agents | ✅ |
+| **Social Agents** | 4 agents: Twitter + Telegram + Discord + News | ✅ |
+| **News Agent** | Separate dedicated agent (Q7) | ✅ |
 | **Twitter API** | Twikit (FREE - no API key!) | ✅ |
 | **Signal Output** | Dual: OWN trading group + PUBLIC signal channel | ✅ |
+| **Public Revenue** | Tip jar enabled (R1) | ✅ |
 | **Autonomous** | A2: Autonomous with limits | ✅ |
 
 ---
@@ -1466,6 +1468,214 @@ signals:
 
 ---
 
+## Part 25: Wallet Security Architecture (Complete)
+
+### Overview
+
+Wallet security implements the **2-Wallet Pattern** with safety limits, following the Hyperliquid security model and best practices from solana-agent-kit, AgentDex, and Nexgent.
+
+### 2-Wallet Pattern
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│                   2-WALLET PATTERN SECURITY                   │
+├────────────────────────────────────────────────────────────────┤
+│                                                          │
+│  MAIN WALLET (Funds)                                       │
+│  ┌────────────────────────────────────────────────────┐   │
+│  │ Address: ${SOLANA_MAIN_WALLET}                     │   │
+│  │ Balance: Holds trading budget                     │   │
+│  │ Purpose: Fund agent wallet when needed          │   │
+│  │ NEVER signs transactions                      │   │
+│  │ NEVER exposed to code/API                  │   │
+│  └────────────────────────────────────────────────────┘   │
+│                         ▲                                │
+│         Fund when needed │                                │
+│                         │ Transfer SOL                  │
+│                         ▼                                │
+│  AGENT WALLET (Sign Only)                               │
+│  ┌────────────────────────────────────────────────────┐   │
+│  │ Private Key: ${SOLANA_AGENT_KEY} (env, encrypted)  │   │
+│  │ Balance: MAX 0.1 SOL (capped)                    │   │
+│  │ Purpose: Sign transactions ONLY                 │   │
+│  │ If compromised: minimal loss                 │   │
+│  └────────────────────────────────────────────────────┘   │
+└────────────────────────────────────────────────────────────────┘
+```
+
+### Security Configuration
+
+```yaml
+# Wallet Security Configuration
+wallet:
+  # 2-WALLET PATTERN
+  agent_wallet:
+    private_key_env: SOLANA_AGENT_PRIVATE_KEY
+    max_balance: 0.1 SOL
+    
+  main_wallet:
+    address_env: SOLANA_MAIN_WALLET
+    
+  # SAFETY LIMITS (from AgentDex/Nexgent research)
+  limits:
+    max_trade_sol: 0.1 SOL           # Max per trade
+    max_daily_trades: 5              # Max trades per day
+    max_slippage_bps: 300            # 3% slippage max
+    max_price_impact_bps: 500        # 5% price impact max
+    require_approval_over: 1.0 SOL   # Approval needed for large trades
+    
+  # MODES
+  modes:
+    simulation: true                 # Test first
+    live_trading: false              # Enable after proven
+```
+
+### Security Measures (Research-Based)
+
+| Measure | Source | Implementation |
+|---------|--------|----------------|
+| **max_trade_sol** | AgentDex | Hard cap per trade |
+| **max_slippage_bps** | AgentDex | Reject high slippage |
+| **max_price_impact_bps** | Nexgent | Reject large impact |
+| **Transaction simulation** | AgentDex | Simulate before broadcast |
+| **Fail-closed model** | AgentDex | Reject anything risky |
+| **Permission layers** | sol-cli | Separate canSwap/canSend |
+| **Token allowlist** | sol-cli | Only trade approved tokens |
+
+### Reference Implementation Patterns
+
+| Tool | Pattern | Security |
+|------|---------|----------|
+| **solana-agent-kit** | KeypairWallet | Encrypted key storage |
+| **AgentDex** | Keypair + config | Safety limits |
+| **sol-cli** | Key file (chmod 600) | Permissions layers |
+| **Nexgent** | Simulation mode | Live/sim separate |
+
+---
+
+## Part 26: Complete Agent Summary
+
+### All Agents (5 + Orchestrator)
+
+```
+AGENT ARCHITECTURE:
+
+         ┌─────────────────────────────────────────┐
+         │   HERMES CORE (Orchestrator)             │
+         │   Port 8643 - Single AI Brain          │
+         └─────────────────────────────────────────┘
+                      │
+     ┌────────────────┼────────────────┐
+     │                │                │
+     ▼                ▼                ▼
+┌─────────┐   ┌─────────┐   ┌──────────────────┐
+│ NOFX    │   │  DEX   │   │ SOCIAL AGENTS     │
+│ Trader  │   │ Swap   │   │ (4 Parallel)      │
+└─────────┘   └─────────┘   └──────────────────┘
+                                  │
+         ┌────────────────────────┼────────────────────────┐
+         │                        │                        │
+         ▼                        ▼                        ▼
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│  Twitter    │     │  Telegram   │     │  Discord    │
+│   Agent     │     │   Agent     │     │   Agent     │
+├──────────────┤     ├──────────────┤     ├──────────────┤
+│• Track      │     │• Join      │     │• Join       │
+│ $CASHTAG   │     │ channels  │     │ servers    │
+│• Monitor   │     │• Monitor │     │• Monitor   │
+│ KOLs       │     │ chats   │     │ chats     │
+│• Detect    │     │• Detect │     │• Detect    │
+│ $COIN     │     │ mentions│     │ mentions  │
+│• Sentiment │     │• Signal │     │• Signal    │
+│ (twikit!) │     │• Forward│     │• Forward  │
+└──────────────┘     └──────────────┘     └──────────────┘
+         │                        │
+         │              ┌─────────┴─────────┐
+         │              │                  │
+         │              ▼                  ▼
+         │      ┌──────────────┐  ┌──────────────┐
+         │      │   NEWS     │  │   OUTPUT   │
+         │      │   Agent    │  │   CHANNELS │
+         │      ├──────────────┤  ├──────────────┤
+         │      │• RSS feeds │  │• OWN group │
+         │      │• News API │  │  (private)│
+         │      │• Announce│  │• PUBLIC   │
+         │      │• Signal  │  │  channel  │
+         │      └──────────────┘  │  +TIPJAR │
+         │              └──────────────────┘
+         │
+         └──────────► Social Signal Routing
+```
+
+### Agent Details
+
+| Agent | Platform | Library | Purpose |
+|-------|----------|---------|---------|
+| **Twitter Agent** | Twitter | twikit (FREE!) | Track $CASHTAG, KOLs, sentiment |
+| **Telegram Agent** | Telegram | python-telegram-bot | Join channels, monitor, signal |
+| **Discord Agent** | Discord | discord.py | Join servers, monitor, signal |
+| **News Agent** | RSS/News | feedparser | Monitor news, announcements |
+| **Hermes Orchestrator** | All | Hermes Core | Make decisions, execute |
+
+### News Agent Specification (NEW - Q7)
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│                      NEWS AGENT                                 │
+├────────────────────────────────────────────────────────────────┤
+│                                                                │
+│  Function: Monitor news sources for coin-related announcements │
+│                                                                │
+│  Sources:                                                      │
+│  • RSS feeds (CoinGecko, major news)                          │
+│  • News APIs (Birdeye, DexScreener news)                       │
+│  • Official announcements (project blogs)                    │
+│                                                                │
+│  Signals Detected:                                             │
+│  • New token launch                                           │
+│  • Partnership announcements                                │
+│  • Token burns                                               │
+│  • Major updates                                              │
+│  • Regulatory news                                           │
+│                                                                │
+│  Integration:                                                 │
+│  • Separate dedicated agent (not combined)                   │
+│  • Forward signals to Hermes orchestrator                       │
+│  • Alert both OWN group and PUBLIC channel                      │
+└────────────────────────────────────────────────────────────────┘
+```
+
+### Public Signal Channel with Revenue (NEW - R1)
+
+```
+┌────────���───────────────────────────────────────────────────────┐
+│    PUBLIC SIGNAL CHANNEL + REVENUE      │
+├────────────────────────────────────┤
+│                                     │
+│  Platform: Telegram (Q6)          │
+│                                     │
+│  Contents:                         │
+│  • Coin name + entry price          │
+│  • Target price                   │
+│  • Confidence score               │
+│  • Brief rationale                │
+│  • Educational content           │
+│                                     │
+│  Revenue:                        │
+│  • Tip jar: ${TIP_JAR_WALLET}    │
+│  • Optional: supporter-only      │
+│  • Community building           │
+│  • Trust-based tips              │
+│                                     │
+│  Security:                     │
+│  • Signals are educational      │
+│  • Not financial advice        │
+│  • Trade at your own risk        │
+└────────────────────────────────────┘
+```
+
+---
+
 ## Part 24: Complete System Architecture (v3.0 - Final)
 
 ```
@@ -1684,6 +1894,6 @@ USER: "BUY 0.1 SOL BONK"
 
 ---
 
-*Document Version: 3.0*
+*Document Version: 4.0*
 *Status: Design Complete - All Brainstorming Decisions Documented*
 *Ready for Implementation Planning*
