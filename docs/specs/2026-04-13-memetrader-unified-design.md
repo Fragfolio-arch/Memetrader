@@ -1894,6 +1894,182 @@ USER: "BUY 0.1 SOL BONK"
 
 ---
 
-*Document Version: 4.0*
+## Part 27: Mandatory Security Check System
+
+### Overview
+
+Security checks are MANDATORY for all DEX trades. NOFX uses existing backend security.
+
+### Security Flow
+
+```
+BEFORE ANY DEX TRADE:
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│               SECURITY SCAN (Before Trade)                    │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  INPUT: token_address, chain (solana/sui)                        │
+│         │                                                       │
+│         ▼                                                       │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │  SECURITY TOOLS PER CHAIN                                 │    │
+│  │                                                           │    │
+│  │  SOLANA:                                                 │    │
+│  │  • dexranger-skill (Agent skill - 20+ agents)            │    │
+│  │  • pump-fun-rug-checker-lite                           │    │
+│  │                                                           │    │
+│  │  SUI:                                                   │    │
+│  │  • SuiSec/HoneyPotDetectionOnSui                       │    │
+│  │                                                           │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                        │                                       │
+│                        ▼                                       │
+│  Checks Performed:                                             │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │ • Mint Authority: RENUNCED?                            │    │
+│  │ • Freeze Authority: DISABLED?                          │    │
+│  │ • Liquidity: LOCKED?                                     │    │
+│  │ • Dev Concentration: <20%?                              │    │
+│  │ • Honeypot: SAFE?                                       │    │
+│  │ • Trust Score: >70?                                     │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                        │                                       │
+│              ┌────────┴────────┐                             │
+│              │                 │                             │
+│           PASS (ALL)         FAIL                            │
+│              │                 │                             │
+│              ▼                 ▼                             │
+│    EXECUTE TRADE        BLOCK + LOG + ALERT                 │
+│              │                 │                             │
+│              │           • Block trade                     │
+│              │           • Log to Hermes memory             │
+│              │           • Add to "avoid" list           │
+│              │           • Alert OWN trading group          │
+│              ▼                 ▼                             │
+│         CONTINUE          STOP                             │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Security Configuration
+
+```yaml
+# Security configuration
+security:
+  # MANDATORY for DEX trades - cannot skip
+  dex_trade_check: true
+  nofx_use_backend: true  # NOFX has built-in security
+  
+  # Minimum trust score (0-100)
+  min_trust_score: 70
+  
+  # Dev wallet concentration limit (%)
+  max_dev_concentration: 20
+  
+  # What checks to perform
+  checks:
+    - mint_authority       # Must be renounced
+    - freeze_authority  # Must be disabled
+    - liquidity_lock    # Must be locked
+    - dev_concentration # Max 20% in dev
+    - honeypot          # Cannot be honeypot
+  
+  # Response on fail
+  on_fail:
+    block_trade: true
+    log_to_memory: true
+    alert_own_group: true
+    add_to_avoid_list: true
+```
+
+### Storage & Learning (R1 + L1)
+
+```
+Storage: Hermes Memory (persistent)
+- Store: token_address, check_result, timestamp, block_reason
+
+Learning System:
+- "avoid" list: tokens that failed security check
+- Auto-exclude from future trades
+- Review to identify patterns
+```
+
+---
+
+## Part 28: Security Tools Reference Links
+
+### Solana Security Tools
+
+| Tool | Repo | Purpose | Stars |
+|------|------|--------|-------|
+| **dexranger-skill** | https://github.com/sashazykov/dexranger-skill | Cross-chain token safety | NEW |
+| **pump-fun-rug-checker-lite** | https://github.com/Rezzecup/pump-fun-rug-checker-lite | Mint, freeze, liquidity | NEW |
+| **Rug-Killer** | https://github.com/drixindustries/Rug-Killer-On-Solana | 52+ risk metrics | 75+ |
+| **Solana Rugchecker** | https://github.com/degenfrends/solana-rugchecker | Rug score, holders | 77 |
+| **rugpull-scam-token-detection** | https://github.com/machenxi/rugpull-scam-token-detection | Real-time monitoring | 38 |
+
+### SUI Security Tools
+
+| Tool | Repo | Purpose | Stars |
+|------|------|--------|-------|
+| **SuiSec/HoneyPotDetectionOnSui** | https://github.com/SuiSec/HoneyPotDetectionOnSui | Honeypot detection | 13 |
+| **suihoneypot** (NPM) | https://www.npmjs.com/package/suihoneypot | Node package | - |
+
+### EVM Security Tools (Future)
+
+| Tool | Repo | Purpose | Stars |
+|------|------|--------|-------|
+| **isRug.API** | https://github.com/DexLegion/isRug.API | ETH/BSC/Base honeypot | 30 |
+| **honeypot-detector-mcp** | https://github.com/kukapay/honeypot-detector-mcp | MCP server | 2 |
+
+### Per-Chain Implementation
+
+| Chain | DEX | Security Tool | What It Checks |
+|-------|-----|-------------|--------------|
+| **Solana** | Jupiter/Raydium | dexranger + pump-fun-rug-checker | Mint, freeze, liquidity, dev, honeypot |
+| **SUI** | Cetus | suihoneypot | Honeypot detection |
+
+---
+
+## Part 29: Complete Reference Links
+
+### Core Dependencies
+
+| Component | Link |
+|-----------|------|
+| Hermes Agent | https://github.com/Fragfolio-arch/Memetrader |
+| NOFX Trading | https://github.com/Fragfolio-arch/Memetrader |
+| Superpowers Skills | https://github.com/obra/superpowers |
+
+### DEX APIs
+
+| DEX | API Docs |
+|-----|----------|
+| Jupiter | https://dev.jup.ag/docs/swap-api |
+| Raydium | https://docs.raydium.io/raydium/for-traders/raydium-swap |
+| Cetus | https://cetus-1.gitbook.io/cetus-developer-docs/ |
+
+### Data Sources
+
+| Source | Link |
+|--------|------|
+| CoinGecko | https://www.coingecko.com/en/api |
+| DexScreener | https://dexscreener.com |
+| Birdeye | https://birdeye.so |
+| Helius | https://helius.dev |
+
+### Agent Skills
+
+| Skill | Link |
+|-------|------|
+| superpowers/brainstorming | https://github.com/obra/superpowers |
+| superpowers/writing-plans | https://github.com/obra/superpowers |
+| dexranger-skill | https://github.com/sashazykov/dexranger-skill |
+
+---
+
+*Document Version: 5.0*
 *Status: Design Complete - All Brainstorming Decisions Documented*
+*Security System Added for Solana + SUI*
 *Ready for Implementation Planning*
