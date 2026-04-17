@@ -170,6 +170,7 @@ def _discover_tools():
         "tools.helius_tool",
         "tools.twitter_sentiment_tool",
         "tools.trade_analysis_tool",
+        "tools.cetus_tool",
     ]
     import importlib
 

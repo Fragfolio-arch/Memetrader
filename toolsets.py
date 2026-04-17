@@ -109,7 +109,7 @@ TOOLSETS = {
         "includes": [],
     },
     "dex": {
-        "description": "DEX swap and trading tools (Solana Jupiter)",
+        "description": "DEX swap and trading tools (Solana + SUI)",
         "tools": [
             "dex_swap_quote",
             "dex_token_list",
@@ -118,6 +118,10 @@ TOOLSETS = {
             "solana_get_address",
             "solana_validate_key",
             "solana_get_balance",
+            "cetus_price",
+            "cetus_pool",
+            "cetus_swap_quote",
+            "cetus_tokens",
         ],
         "includes": [],
     },
