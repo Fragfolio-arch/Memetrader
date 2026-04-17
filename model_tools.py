@@ -165,6 +165,7 @@ def _discover_tools():
         "tools.coingecko_tool",
         "tools.dexscreener_tool",
         "tools.birdeye_tool",
+        "tools.dex_swap_tool",
     ]
     import importlib
 

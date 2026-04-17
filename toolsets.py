@@ -108,6 +108,15 @@ TOOLSETS = {
         ],
         "includes": [],
     },
+    "dex": {
+        "description": "DEX swap and trading tools (Solana Jupiter)",
+        "tools": [
+            "dex_swap_quote",
+            "dex_token_list",
+            "dex_execute_swap",
+        ],
+        "includes": [],
+    },
     "vision": {
         "description": "Image analysis and vision tools",
         "tools": ["vision_analyze"],
