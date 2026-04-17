@@ -163,6 +163,8 @@ def _discover_tools():
         "tools.trading",
         "tools.nofx_trading_tool",
         "tools.coingecko_tool",
+        "tools.dexscreener_tool",
+        "tools.birdeye_tool",
     ]
     import importlib
 

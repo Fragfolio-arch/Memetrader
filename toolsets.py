@@ -98,7 +98,14 @@ TOOLSETS = {
     },
     "data": {
         "description": "Market data and price discovery tools from external sources.",
-        "tools": ["coingecko_price", "coingecko_trending"],
+        "tools": [
+            "coingecko_price",
+            "coingecko_trending",
+            "dexscreener_search",
+            "dexscreener_pair_info",
+            "birdeye_token_info",
+            "birdeye_trending",
+        ],
         "includes": [],
     },
     "vision": {
