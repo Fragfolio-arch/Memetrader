@@ -1,9 +1,13 @@
 # MemeTrader Implementation Plan
 
+> ⚠️ **IMPORTANT UPDATE (April 17, 2026):**
+> Phases 4-7 implementation approach has been corrected. The original plan specified Go files in `nofx/trader/`, but the design document specifies Hermes Python tools first.
+> **See `docs/superpowers/plans/2026-04-17-dex-integration.md` for the updated implementation plan.**
+
 **Generated using superpower skills (writing-plans) approach**
 
 **Date:** April 17, 2026  
-**Version:** 1.0  
+**Version:** 1.1 (CORRECTED)  
 **Based on:** 2026-04-13-memetrader-unified-design.md v9.0
 
 ## Overview
@@ -943,7 +947,13 @@ from tools import birdeye_tool
 - **Verification:** Tool available
 - **Commit:** "Register Birdeye tool"
 
-## Phase 4: DEX Integration
+---
+
+> **NOTE (April 17, 2026):** Phases 4-7 implementation approach has been UPDATED.
+> See `docs/superpowers/plans/2026-04-17-dex-integration.md` for the correct implementation approach.
+> Key change: DEX tools are implemented as Hermes Python tools (NOT Go files).
+
+## Phase 4: DEX Integration (OUTDATED - See Updated Plan)
 
 **Goal:** Add DEX trading capabilities to NOFX.
 
@@ -1075,7 +1085,15 @@ func (r *RaydiumTrader) CancelOrder(ctx context.Context, orderID string) error {
 - **Verification:** Available
 - **Commit:** "Register Cetus trader"
 
-## Phase 5: Social Hype-Meter
+---
+
+> **NOTE (April 17, 2026):** Phases 5-7 have been moved and updated in the new plan.
+> See `docs/superpowers/plans/2026-04-17-dex-integration.md` for correct implementation order:
+> - Phase 2: On-Chain Radar (Helius, Wallet Tracking)
+> - Phase 3: Social Hype-Meter (Twitter, Telegram, Discord)
+> - Phase 4: Self-Evolution (Trade logging, analysis)
+
+## Phase 5: Social Hype-Meter (OUTDATED - See Updated Plan)
 
 **Goal:** Add social sentiment analysis tools.
 
@@ -1253,17 +1271,21 @@ social:
 - **Verification:** Can fetch prices and place test orders
 - **Commit:** "Test DEX integrations"
 
-## Success Criteria Verification
+## Success Criteria Verification (Updated April 17, 2026)
 
-- [ ] Paper trading removed from Hermes
-- [ ] NOFX AI disabled
-- [ ] /hermes page accessible in NOFX-UI
-- [ ] Chat, Memory, Skills, Inspector tabs working
-- [ ] CoinGecko, DexScreener, Birdeye tools available
-- [ ] Raydium, Jupiter, Cetus traders registered
-- [ ] Twitter, Telegram, Discord tools working
-- [ ] Helius and SUI RPC tools functional
-- [ ] Unified config updated
+- [x] Paper trading removed from Hermes ✅
+- [x] NOFX AI disabled ✅
+- [x] /hermes page accessible in NOFX-UI ✅
+- [x] Chat, Memory, Skills, Inspector tabs working ✅
+- [x] CoinGecko, DexScreener, Birdeye tools available ✅ (Phase 3 COMPLETE)
+- [ ] DEX Swap tool (Hermes Python) - IN PROGRESS (see updated plan)
+- [ ] Wallet integration for DEX - PENDING
+- [ ] Helius Solana RPC tool - PENDING
+- [ ] Wallet tracking - PENDING
+- [ ] Twitter, Telegram, Discord tools - PENDING
+- [ ] Trade logging/analysis - PENDING
+
+> Note: Phases 4-7 have been corrected. See `docs/superpowers/plans/2026-04-17-dex-integration.md`
 
 ## Next Steps
 
