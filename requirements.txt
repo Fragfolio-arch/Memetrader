@@ -27,6 +27,10 @@ fal-client
 # Text-to-speech (Edge TTS is free, no API key needed)
 edge-tts
 
+# Solana/DEX tools
+solders>=0.27.0
+base58>=2.1.0
+
 # Optional: For cron expression parsing (cronjob scheduling)
 croniter
 
