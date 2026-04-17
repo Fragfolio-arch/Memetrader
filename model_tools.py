@@ -171,6 +171,11 @@ def _discover_tools():
         "tools.twitter_sentiment_tool",
         "tools.trade_analysis_tool",
         "tools.cetus_tool",
+        "tools.telegram_sentiment_tool",
+        "tools.discord_sentiment_tool",
+        "tools.reddit_sentiment_tool",
+        "tools.sui_rpc_tool",
+        "tools.wallet_tracker",
     ]
     import importlib
 
