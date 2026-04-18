@@ -1,0 +1,39 @@
+Dependency report generated on Sat Apr 18 10:35:26 UTC 2026
+Repository root: /workspaces/Memetrader
+
+=================================================================
+Repository: mcp-wrappers/solana/solana-agent-kit
+Path: /workspaces/Memetrader/mcp-wrappers/solana/solana-agent-kit
+=================================================================
+Repository: mcp-wrappers/solana/dexranger-skill
+Path: /workspaces/Memetrader/mcp-wrappers/solana/dexranger-skill
+=================================================================
+Repository: mcp-wrappers/sui/sui-agent-kit
+Path: /workspaces/Memetrader/mcp-wrappers/sui/sui-agent-kit
+=================================================================
+Repository: mcp-wrappers/sui/sui-trader-mcp
+Path: /workspaces/Memetrader/mcp-wrappers/sui/sui-trader-mcp
+=================================================================
+Repository: mcp-wrappers/social/twitter-alpha-sentiment-tracker-v2
+Path: /workspaces/Memetrader/mcp-wrappers/social/twitter-alpha-sentiment-tracker-v2
+=================================================================
+Repository: external-repos/social/twikit
+Path: /workspaces/Memetrader/external-repos/social/twikit
+=================================================================
+Repository: external-repos/sui/capybot
+Path: /workspaces/Memetrader/external-repos/sui/capybot
+=================================================================
+Repository: external-repos/sui/HoneyPotDetectionOnSui
+Path: /workspaces/Memetrader/external-repos/sui/HoneyPotDetectionOnSui
+=================================================================
+Repository: external-repos/base/defi-trading-mcp
+Path: /workspaces/Memetrader/external-repos/base/defi-trading-mcp
+=================================================================
+Repository: external-repos/base/pumpclaw
+Path: /workspaces/Memetrader/external-repos/base/pumpclaw
+=================================================================
+Repository: external-repos/security/Rug-Killer-On-Solana
+Path: /workspaces/Memetrader/external-repos/security/Rug-Killer-On-Solana
+=================================================================
+Repository: external-repos/security/solana-rugchecker
+Path: /workspaces/Memetrader/external-repos/security/solana-rugchecker

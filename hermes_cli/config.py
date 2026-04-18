@@ -382,6 +382,37 @@ DEFAULT_CONFIG = {
         "tool_preview_length": 0,  # Max chars for tool call previews (0 = no limit, show full paths/commands)
     },
 
+    # NOFX Trading Configuration
+    "nofx": {
+        "enabled": True,
+        "api_url": "http://localhost:8080",
+        "api_token": "",
+    },
+
+    # Data Sources Configuration
+    "data_sources": {
+        "coingecko": {"enabled": True},
+        "dexscreener": {"enabled": True},
+        "birdeye": {"enabled": True},
+    },
+
+    # UI Settings
+    "ui": {
+        "theme": "dark",
+        "hermes_tab": True,
+    },
+
+    # MCP Servers configuration
+    # Add MCP servers for extended functionality (e.g., DEX trading, blockchain data)
+    # Example format:
+    # mcp_servers:
+    #   solana:
+    #     command: npx
+    #     args: ["-y", "@sendaifun/solana-agent-kit"]
+    #     env:
+    #       SOLANA_RPC_URL: https://api.devnet.solana.com
+    "mcp_servers": {},
+
     # Privacy settings
     "privacy": {
         "redact_pii": False,  # When True, hash user IDs and strip phone numbers from LLM context
@@ -943,6 +974,76 @@ OPTIONAL_ENV_VARS = {
     "HONCHO_BASE_URL": {
         "description": "Base URL for self-hosted Honcho instances (no API key needed)",
         "prompt": "Honcho base URL (e.g. http://localhost:8000)",
+        "category": "tool",
+    },
+
+    # ── Trading (NOFX) ──
+    "NOFX_API_URL": {
+        "description": "NOFX trading backend URL",
+        "prompt": "NOFX API URL (e.g. http://localhost:8080)",
+        "url": None,
+        "password": False,
+        "category": "trading",
+    },
+    "NOFX_API_TOKEN": {
+        "description": "JWT token for NOFX API authentication",
+        "prompt": "NOFX API token",
+        "url": None,
+        "password": True,
+        "category": "trading",
+    },
+
+    # ── DEX Wallets (2-Wallet Pattern) ──
+    # Agent wallet - for signing transactions (should hold minimal balance)
+    "SOLANA_PRIVATE_KEY": {
+        "description": "Solana agent wallet private key (base58 encoded) for DEX signing",
+        "prompt": "Solana agent private key (base58)",
+        "url": None,
+        "password": True,
+        "category": "trading",
+    },
+    "SOLANA_MAIN_WALLET": {
+        "description": "Solana main wallet address (for funding agent wallet)",
+        "prompt": "Solana main wallet address",
+        "url": None,
+        "password": False,
+        "category": "trading",
+    },
+    "SUI_PRIVATE_KEY": {
+        "description": "Sui agent wallet private key (bech32 format starting with suiprivkey)",
+        "prompt": "Sui agent private key (bech32)",
+        "url": None,
+        "password": True,
+        "category": "trading",
+    },
+    "SUI_MAIN_WALLET": {
+        "description": "Sui main wallet address (for funding agent wallet)",
+        "prompt": "Sui main wallet address",
+        "url": None,
+        "password": False,
+        "category": "trading",
+    },
+    "BASE_PRIVATE_KEY": {
+        "description": "Base chain agent wallet private key (hex encoded)",
+        "prompt": "Base agent private key (hex)",
+        "url": None,
+        "password": True,
+        "category": "trading",
+    },
+    "BASE_MAIN_WALLET": {
+        "description": "Base main wallet address (for funding agent wallet)",
+        "prompt": "Base main wallet address",
+        "url": None,
+        "password": False,
+        "category": "trading",
+    },
+
+    # ── MCP Server Keys ──
+    "DEXRANGER_API_KEY": {
+        "description": "DEX Ranger API key for token security analysis",
+        "prompt": "DEX Ranger API key",
+        "url": "https://dexranger.io",
+        "password": True,
         "category": "tool",
     },
 

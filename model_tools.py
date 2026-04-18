@@ -186,6 +186,8 @@ def _discover_tools():
         "tools.dex_grid_tool",
         "tools.risk_manager",
         "tools.risk_tools",
+        "tools.dexranger_tool",
+        "tools.sui_security_tool",
     ]
     import importlib
 

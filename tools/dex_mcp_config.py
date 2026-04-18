@@ -4,10 +4,17 @@ DEX MCP Configuration Helper
 This module provides configuration templates for connecting to DEX MCP servers.
 These servers can be added to ~/.hermes/config.yaml under mcp_servers.
 
-Supported DEX MCP Servers:
-1. solana-agent-kit - 60+ Solana actions (Jupiter, Raydium, Pump.fun)
-2. sui-trader-mcp - MCP for Cetus swaps
-3. universal-crypto-mcp - 380+ tools across 20+ chains
+Supported DEX MCP Servers (TESTED):
+1. soliris-mcp - Solana MCP with rug-pull detection, copy trading, Jupiter swaps
+2. fr3k-behemoth - Cosmic crypto trading MCP (multiple exchanges)
+3. solana-mcp-server - Basic Solana wallet/tx handling
+
+Previously tested but NOT AVAILABLE:
+- @kukapay/sui-trader-mcp - package not found
+- @edkdev/defi-trading-mcp - package not found
+- @nirholas/universal-crypto-mcp - package not found
+- @chainstacklabs/web3-ai-trading-agent - package not found
+- solana-agent-kit - wrong package name, doesn't exist
 """
 
 import json
@@ -31,31 +38,30 @@ def get_dex_mcp_config(
     """
     
     configs = {
-        "solana_agent_kit": {
-            "description": "Solana Agent Kit - 60+ Solana actions",
+        "soliris": {
+            "description": "Soliris MCP - Solana with rug-pull detection, copy trading, Jupiter swaps",
             "command": "npx",
-            "args": ["-y", "@sendaifun/solana-agent-kit"],
+            "args": ["-y", "soliris-mcp"],
             "env": {
-                "SOLANA_RPC_URL": "https://api.devnet.solana.com",
-                "OPENAI_API_KEY": "${OPENAI_API_KEY}"
+                "SOLANA_RPC_URL": "https://api.devnet.solana.com"
             },
             "timeout": 120,
             "connect_timeout": 60
         },
-        "sui_trader_mcp": {
-            "description": "SUI Trader MCP - Cetus swaps",
-            "command": "npx", 
-            "args": ["-y", "@kukapay/sui-trader-mcp"],
-            "env": {
-                "SUI_RPC_URL": "https://rpc.testnet.sui.io"
-            },
+        "behemoth": {
+            "description": "BEHEMOTH Cosmic Crypto Trading MCP - Multiple exchange support",
+            "command": "npx",
+            "args": ["-y", "fr3k-behemoth"],
             "timeout": 120,
             "connect_timeout": 60
         },
-        "universal_crypto": {
-            "description": "Universal Crypto MCP - 380+ tools across 20+ chains",
+        "solana_mcp_server": {
+            "description": "Basic Solana MCP Server - wallet management, transactions",
             "command": "npx",
-            "args": ["-y", "@nirholas/universal-crypto-mcp"],
+            "args": ["-y", "solana-mcp-server"],
+            "env": {
+                "SOLANA_RPC_URL": "https://api.devnet.solana.com"
+            },
             "timeout": 120,
             "connect_timeout": 60
         }
@@ -84,35 +90,34 @@ def get_config_yaml_template() -> str:
     template = '''# Add to ~/.hermes/config.yaml under mcp_servers:
 
 mcp_servers:
-  # Solana Agent Kit - 60+ Solana actions (Jupiter, Raydium, Pump.fun)
+  # Soliris MCP - Solana with rug-pull detection, copy trading, Jupiter swaps
+  soliris:
+    command: npx
+    args:
+      - -y
+      - soliris-mcp
+    env:
+      SOLANA_RPC_URL: https://api.devnet.solana.com
+    timeout: 120
+    connect_timeout: 60
+   
+  # BEHEMOTH Cosmic Crypto Trading MCP - Multiple exchange support
+  behemoth:
+    command: npx
+    args:
+      - -y
+      - fr3k-behemoth
+    timeout: 120
+    connect_timeout: 60
+
+  # Basic Solana MCP Server - wallet management, transactions
   solana:
     command: npx
     args:
       - -y
-      - @sendaifun/solana-agent-kit
+      - solana-mcp-server
     env:
       SOLANA_RPC_URL: https://api.devnet.solana.com
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-    timeout: 120
-    connect_timeout: 60
-  
-  # SUI Trader MCP - Cetus swaps on SUI
-  sui:
-    command: npx
-    args:
-      - -y
-      - @kukapay/sui-trader-mcp
-    env:
-      SUI_RPC_URL: https://rpc.testnet.sui.io
-    timeout: 120
-    connect_timeout: 60
-  
-  # Universal Crypto MCP - Multi-chain tools
-  crypto:
-    command: npx
-    args:
-      - -y
-      - @nirholas/universal-crypto-mcp
     timeout: 120
     connect_timeout: 60
 '''

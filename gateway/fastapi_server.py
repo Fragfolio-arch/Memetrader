@@ -23,6 +23,8 @@ from fastapi import FastAPI, HTTPException, Request, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi import Depends
+import time
+from collections import defaultdict
 
 from hermes_cli.config import load_config
 from hermes_state import SessionDB
@@ -35,6 +37,41 @@ from tools.crypto.price_oracle import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+# ============================================================================
+# Rate Limiting Middleware
+# ============================================================================
+
+class RateLimitMiddleware:
+    """Simple in-memory rate limiter per IP address."""
+
+    def __init__(self, requests_per_minute: int = 60):
+        self.requests_per_minute = requests_per_minute
+        self.requests: Dict[str, list] = defaultdict(list)
+
+    async def __call__(self, request: Request, call_next):
+        client_ip = request.client.host if request.client else "unknown"
+        current_time = time.time()
+
+        # Clean old requests (older than 1 minute)
+        self.requests[client_ip] = [
+            t for t in self.requests[client_ip]
+            if current_time - t < 60
+        ]
+
+        # Check rate limit
+        if len(self.requests[client_ip]) >= self.requests_per_minute:
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Rate limit exceeded. Please try again later."}
+            )
+
+        # Add current request
+        self.requests[client_ip].append(current_time)
+
+        response = await call_next(request)
+        return response
 
 
 # ============================================================================
@@ -93,6 +130,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Rate Limiting - 60 requests per minute per IP
+app.add_middleware(RateLimitMiddleware, requests_per_minute=60)
 
 
 # ============================================================================

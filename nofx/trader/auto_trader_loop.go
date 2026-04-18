@@ -58,6 +58,38 @@ func (at *AutoTrader) runCycle() error {
 		logger.Info("📅 Daily P&L reset")
 	}
 
+	// 3. Check daily drawdown limit
+	if at.dailyPnL < 0 {
+		drawdownPercent := (-at.dailyPnL / at.initialBalance) * 100
+		maxDrawdown := 10.0 // Default 10%
+		if at.config.StrategyConfig != nil && at.config.StrategyConfig.RiskControl.MaxDailyDrawdown != 0 {
+			maxDrawdown = -at.config.StrategyConfig.RiskControl.MaxDailyDrawdown * 100
+		}
+		if drawdownPercent >= maxDrawdown {
+			logger.Infof("🚨 DRAWDOWN TRIGGERED: Daily loss %.2f%% exceeds max %.2f%%, closing all positions", drawdownPercent, maxDrawdown)
+			// Close all positions
+			positions, err := at.trader.GetPositions()
+			if err != nil {
+				logger.Warnf("Failed to get positions for emergency close: %v", err)
+			}
+			for _, pos := range positions {
+				symbol := pos["symbol"].(string)
+				side := pos["side"].(string)
+				if side == "long" {
+					at.trader.CloseLong(symbol, 0)
+				} else if side == "short" {
+					at.trader.CloseShort(symbol, 0)
+				}
+			}
+			// Pause trading for rest of day
+			at.stopUntil = time.Now().Add(24 * time.Hour)
+			record.Success = false
+			record.ErrorMessage = fmt.Sprintf("Daily drawdown limit exceeded: %.2f%%", drawdownPercent)
+			at.saveDecision(record)
+			return nil
+		}
+	}
+
 	// 4. Collect trading context
 	ctx, err := at.buildTradingContext()
 	if err != nil {
@@ -251,6 +283,16 @@ func (at *AutoTrader) runCycle() error {
 		}
 	}
 
+	// Check trading mode and approval threshold
+	tradingMode := "supervised"
+	approvalThreshold := 100.0
+	if at.config.StrategyConfig != nil && at.config.StrategyConfig.RiskControl.TradingMode != "" {
+		tradingMode = at.config.StrategyConfig.RiskControl.TradingMode
+	}
+	if at.config.InitialBalance > 0 {
+		approvalThreshold = at.config.StrategyConfig.RiskControl.ApprovalThreshold
+	}
+
 	// Execute decisions and record results
 	for _, d := range sortedDecisions {
 		// Check if trader is stopped before each decision (allow immediate stop during execution)
@@ -260,6 +302,26 @@ func (at *AutoTrader) runCycle() error {
 		if !running {
 			logger.Infof("⏹ Trader stopped during decision execution, aborting remaining decisions")
 			break
+		}
+
+		// Check for approval threshold (trades above threshold require approval in supervised mode)
+		positionValue := d.PositionSizeUSD
+		if positionValue > approvalThreshold && tradingMode == "supervised" {
+			logger.Infof("⚠️ [%s] Approval required: %s %s worth $%.2f exceeds threshold $%.2f",
+				at.name, d.Action, d.Symbol, positionValue, approvalThreshold)
+			record.ExecutionLog = append(record.ExecutionLog, 
+				fmt.Sprintf("⚠️ %s %s requires approval (value $%.2f > $%.2f)", 
+					d.Symbol, d.Action, positionValue, approvalThreshold))
+			continue // Skip this decision
+		}
+
+		// Alert-only mode: log suggestions but don't execute
+		if tradingMode == "alert_only" {
+			logger.Infof("📢 [%s] Alert-only mode: would execute %s %s (use /trade to confirm)", 
+				at.name, d.Action, d.Symbol)
+			record.ExecutionLog = append(record.ExecutionLog, 
+				fmt.Sprintf("📢 Alert: %s %s (awaiting /trade command)", d.Symbol, d.Action))
+			continue
 		}
 
 		actionRecord := store.DecisionAction{
@@ -304,7 +366,7 @@ func (at *AutoTrader) getDecisionFromHermes(ctx *kernel.Context) (*kernel.FullDe
 		"context": map[string]interface{}{
 			"account":         ctx.Account,
 			"candidate_coins": ctx.CandidateCoins,
-			"market_data":     ctx.MarketData,
+			"market_data":     ctx.MarketDataMap,
 		},
 		"strategy": "meme_trading",
 		"exchange": at.exchange,

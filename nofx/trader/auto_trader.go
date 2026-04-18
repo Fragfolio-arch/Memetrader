@@ -10,16 +10,21 @@ import (
 	"nofx/store"
 	"nofx/wallet"
 	"github.com/ethereum/go-ethereum/crypto"
+	"nofx/trader/aerodrome"
 	"nofx/trader/aster"
 	"nofx/trader/binance"
+	"nofx/trader/binance/spot"
 	"nofx/trader/bitget"
 	"nofx/trader/bybit"
+	"nofx/trader/cetus"
 	"nofx/trader/gate"
 	"nofx/trader/hyperliquid"
 	"nofx/trader/indodax"
+	"nofx/trader/jupiter"
 	"nofx/trader/kucoin"
 	"nofx/trader/lighter"
 	"nofx/trader/okx"
+	"nofx/trader/raydium"
 	"sync"
 	"time"
 )
@@ -32,7 +37,7 @@ type AutoTraderConfig struct {
 	AIModel string // AI model: "qwen" or "deepseek"
 
 	// Trading platform selection
-	Exchange   string // Exchange type: "binance", "bybit", "okx", "bitget", "gate", "hyperliquid", "aster" or "lighter"
+	Exchange   string // Exchange type: "binance", "binance_spot", "bybit", "okx", "bitget", "gate", "hyperliquid", "aster", "lighter", "jupiter", "raydium", "cetus", "aerodrome"
 	ExchangeID string // Exchange account UUID (for multi-account support)
 
 	// Binance API configuration
@@ -83,6 +88,12 @@ type AutoTraderConfig struct {
 	LighterAPIKeyPrivateKey string // LIGHTER API Key private key (40 bytes, for transaction signing)
 	LighterAPIKeyIndex      int    // LIGHTER API Key index (0-255)
 	LighterTestnet          bool   // Whether to use testnet
+
+	// DEX configuration (Solana/Sui)
+	SolanaPrivateKey string // Solana wallet private key (base58 encoded)
+	SuiPrivateKey   string // Sui wallet private key (hex encoded)
+	BasePrivateKey  string // Base wallet private key (hex encoded)
+	DexTestnet      bool   // Whether to use testnet/devnet
 
 	// AI configuration
 	UseQwen     bool
@@ -240,6 +251,9 @@ func NewAutoTrader(config AutoTraderConfig, st *store.Store, userID string) (*Au
 	case "binance":
 		logger.Infof("🏦 [%s] Using Binance Futures trading", config.Name)
 		trader = binance.NewFuturesTrader(config.BinanceAPIKey, config.BinanceSecretKey, userID)
+	case "binance_spot":
+		logger.Infof("🏦 [%s] Using Binance Spot trading", config.Name)
+		trader = spot.NewSpotTrader(config.BinanceAPIKey, config.BinanceSecretKey)
 	case "bybit":
 		logger.Infof("🏦 [%s] Using Bybit Futures trading", config.Name)
 		trader = bybit.NewBybitTrader(config.BybitAPIKey, config.BybitSecretKey)
@@ -288,6 +302,18 @@ func NewAutoTrader(config AutoTraderConfig, st *store.Store, userID string) (*Au
 	case "indodax":
 		logger.Infof("🏦 [%s] Using Indodax Spot trading", config.Name)
 		trader = indodax.NewIndodaxTrader(config.IndodaxAPIKey, config.IndodaxSecretKey)
+	case "jupiter":
+		logger.Infof("🏦 [%s] Using Jupiter DEX (Solana)", config.Name)
+		trader = jupiter.NewJupiterTrader(config.SolanaPrivateKey, config.DexTestnet)
+	case "raydium":
+		logger.Infof("🏦 [%s] Using Raydium DEX (Solana)", config.Name)
+		trader = raydium.NewRaydiumTrader(config.SolanaPrivateKey, config.DexTestnet)
+	case "cetus":
+		logger.Infof("🏦 [%s] Using Cetus DEX (Sui)", config.Name)
+		trader = cetus.NewCetusTrader(config.SuiPrivateKey, config.DexTestnet)
+	case "aerodrome":
+		logger.Infof("🏦 [%s] Using Aerodrome DEX (Base)", config.Name)
+		trader = aerodrome.NewAerodromeTrader(config.BasePrivateKey, config.DexTestnet)
 	default:
 		return nil, fmt.Errorf("unsupported trading platform: %s", config.Exchange)
 	}

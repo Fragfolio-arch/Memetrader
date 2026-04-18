@@ -4365,6 +4365,110 @@ class HermesCLI:
         from hermes_cli.skills_hub import handle_skills_slash
         handle_skills_slash(cmd, ChatConsole())
 
+    def _handle_mcp_command(self, cmd: str):
+        """Handle /mcp command to manage MCP servers."""
+        import shlex
+        from tools.dex_mcp_config import get_dex_mcp_config, get_config_yaml_template
+
+        tokens = shlex.split(cmd.strip())
+        subcommand = tokens[1].lower() if len(tokens) > 1 else "list"
+
+        if subcommand == "list":
+            from tools.mcp_tool import _servers, _lock
+            from hermes_constants import display_hermes_home
+            from tools.dex_mcp_config import get_dex_mcp_config
+
+            print()
+            print("+" + "-" * 60 + "+")
+            print("|" + " " * 18 + "(✿◠‿◠) MCP Servers" + " " * 20 + "|")
+            print("+" + "-" * 60 + "+")
+            print()
+
+            # Get available server templates
+            available = {
+                "soliris": "Soliris MCP - Solana with rug-pull detection",
+                "behemoth": "BEHEMOTH Cosmic Crypto Trading MCP",
+                "solana_mcp_server": "Basic Solana MCP Server"
+            }
+
+            # Show configured servers from config
+            config = self.config or {}
+            mcp_config = config.get("mcp_servers", {})
+
+            if mcp_config:
+                print("  Configured Servers:")
+                print("  " + "-" * 55)
+                for name, cfg in mcp_config.items():
+                    desc = cfg.get("description", available.get(name, "MCP Server"))
+                    print(f"    • {name}: {desc}")
+                print()
+            else:
+                print("  No MCP servers configured.")
+                print(f"  Add to {display_hermes_home()}/config.yaml:")
+                print("    mcp_servers:")
+                print("      soliris:")
+                print("        command: npx")
+                print("        args: [\"-y\", \"soliris-mcp\"]")
+                print()
+
+            # Show available templates
+            print("  Available Server Templates:")
+            print("  " + "-" * 55)
+            for name, desc in available.items():
+                print(f"    • {name}: {desc}")
+            print()
+            print("  Usage: /mcp add <server-name>")
+            print("  Example: /mcp add soliris")
+
+        elif subcommand == "add":
+            if len(tokens) < 3:
+                print("  Usage: /mcp add <server-name>")
+                print("  Available: soliris, behemoth, solana_mcp_server")
+                return
+
+            server_name = tokens[2].lower()
+            try:
+                cfg = get_dex_mcp_config(server_name)
+
+                # Get current config
+                config = self.config or {}
+                mcp_config = config.get("mcp_servers", {})
+
+                # Add new server
+                mcp_config[server_name] = cfg
+
+                # Save to config
+                save_config_value("mcp_servers", mcp_config)
+                print(f"  ✓ Added MCP server '{server_name}' to config.")
+                print("  Run /reload-mcp to connect to the server.")
+            except ValueError as e:
+                print(f"  ✗ Error: {e}")
+                print("  Available: soliris, behemoth, solana_mcp_server")
+
+        elif subcommand == "remove":
+            if len(tokens) < 3:
+                print("  Usage: /mcp remove <server-name>")
+                return
+
+            server_name = tokens[2].lower()
+
+            config = self.config or {}
+            mcp_config = config.get("mcp_servers", {})
+
+            if server_name in mcp_config:
+                del mcp_config[server_name]
+                save_config_value("mcp_servers", mcp_config)
+                print(f"  ✓ Removed MCP server '{server_name}' from config.")
+            else:
+                print(f"  ✗ Server '{server_name}' not found in config.")
+
+        elif subcommand == "template":
+            print(get_config_yaml_template())
+
+        else:
+            print(f"  (._.) Unknown MCP command: {subcommand}")
+            print("  Available: list, add, remove, template")
+
     def _show_gateway_status(self):
         """Show status of the gateway and connected messaging platforms."""
         from gateway.config import load_gateway_config, Platform
@@ -4602,6 +4706,8 @@ class HermesCLI:
         elif canonical == "reload-mcp":
             with self._busy_command(self._slow_command_status(cmd_original)):
                 self._reload_mcp()
+        elif canonical == "mcp":
+            self._handle_mcp_command(cmd_original)
         elif canonical == "browser":
             self._handle_browser_command(cmd_original)
         elif canonical == "plugins":

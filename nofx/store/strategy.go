@@ -282,6 +282,18 @@ type RiskControlConfig struct {
 	MinRiskRewardRatio float64 `json:"min_risk_reward_ratio"`
 	// Min AI confidence to open position (AI guided)
 	MinConfidence int `json:"min_confidence"`
+
+	// Max daily drawdown (CODE ENFORCED, default: -10% = -0.10)
+	// When daily P&L drops below this threshold, all positions are closed
+	MaxDailyDrawdown float64 `json:"max_daily_drawdown"`
+	// Stop-loss percentage for positions (CODE ENFORCED, default: -15% = -0.15)
+	StopLossPercent float64 `json:"stop_loss_percent"`
+	// Take-profit percentage for positions (default: +30% = 0.30)
+	TakeProfitPercent float64 `json:"take_profit_percent"`
+	// Trading mode: "supervised", "alert_only", "autonomous"
+	TradingMode string `json:"trading_mode"`
+	// Approval threshold - trades above this amount require manual approval (default: 100 USDT)
+	ApprovalThreshold float64 `json:"approval_threshold"`
 }
 
 // NewStrategyStore creates a new StrategyStore
